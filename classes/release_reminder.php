@@ -140,8 +140,10 @@ class release_reminder {
                 continue;
             }
 
+            $coursecontext = \context_course::instance($course->id);
+
             foreach ($recipients as $user) {
-                if (is_siteadmin($user->id)) {
+                if (!is_enrolled($coursecontext, $user, '', true)) {
                     continue;
                 }
 

@@ -137,26 +137,34 @@ final class release_reminder_test extends \advanced_testcase {
         [$course2, $titles2] = $this->create_release_course();
         $user = $this->getDataGenerator()->create_user();
         $otheruser = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course1->id, 'editingteacher');
+        $this->getDataGenerator()->enrol_user($otheruser->id, $course2->id, 'editingteacher');
 
         set_config('allowedlist', 1, 'local_oer');
         $this->add_userlist_entry($user->id, userlist::TYPE_A);
         $this->add_userlist_entry($otheruser->id, userlist::TYPE_A);
 
         $sink = $this->redirectEmails();
-        $this->assertEquals(4, release_reminder::send_if_due());
+        $this->assertEquals(2, release_reminder::send_if_due());
         $emails = $sink->get_messages();
 
-        $this->assertCount(4, $emails);
-        $subjects = implode("\n", array_map(static function ($email) {
-            return $email->subject;
-        }, $emails));
-        $bodies = implode("\n", array_map(static function ($email) {
-            return $email->body;
-        }, $emails));
-        $this->assertStringContainsString($course1->fullname, $subjects);
-        $this->assertStringContainsString($course2->fullname, $subjects);
-        $this->assertStringContainsString($titles1[0], $bodies);
-        $this->assertStringContainsString($titles2[0], $bodies);
+        $this->assertCount(2, $emails);
+        $emailsbyrecipient = [];
+        foreach ($emails as $email) {
+            $emailsbyrecipient[$email->to] = $email;
+        }
+
+        $this->assertArrayHasKey($user->email, $emailsbyrecipient);
+        $this->assertArrayHasKey($otheruser->email, $emailsbyrecipient);
+        $this->assertStringContainsString($course1->fullname, $emailsbyrecipient[$user->email]->subject);
+        $this->assertStringContainsString($titles1[0], $emailsbyrecipient[$user->email]->body);
+        $this->assertStringNotContainsString($course2->fullname, $emailsbyrecipient[$user->email]->subject);
+        $this->assertStringNotContainsString($titles2[0], $emailsbyrecipient[$user->email]->body);
+
+        $this->assertStringContainsString($course2->fullname, $emailsbyrecipient[$otheruser->email]->subject);
+        $this->assertStringContainsString($titles2[0], $emailsbyrecipient[$otheruser->email]->body);
+        $this->assertStringNotContainsString($course1->fullname, $emailsbyrecipient[$otheruser->email]->subject);
+        $this->assertStringNotContainsString($titles1[0], $emailsbyrecipient[$otheruser->email]->body);
     }
 
     /**
@@ -171,6 +179,7 @@ final class release_reminder_test extends \advanced_testcase {
     public function test_send_if_due_includes_incomplete_release_metadata(): void {
         [$course, $titles] = $this->create_release_course();
         $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, 'editingteacher');
 
         set_config('allowedlist', 1, 'local_oer');
         set_config('requiredfields', 'description', 'local_oer');
