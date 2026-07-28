@@ -243,6 +243,7 @@ $string['metadatanotwritable2'] = 'Diese Datei wird bereits in einem anderen Kur
 $string['metadatanotwritable3'] = 'Diese Datei wurde bereits veröffentlicht und kann deshalb nicht mehr editiert werden.';
 $string['minimumchars'] = 'Mindestens {$a} Zeichen erforderlich';
 $string['moreinformation'] = 'Weitere informationen';
+$string['multilang_info'] = 'Für Mehrsprachigkeit verwenden Sie bitte <b>mlang</b>-Tags';
 $string['multiplecourses'] = 'Mehrere Kurse verwenden diese Datei';
 $string['multiplecoursestofile'] = 'Mehrere Kurse verwenden diese Datei. Sie können auch ' .
         'Kurs-Metadaten hinzufügen, die zu einem anderen Kurs ' .
@@ -464,8 +465,7 @@ $string['releaseplugin_description'] = 'Wählen Sie ein Subplugin, um das Veröf
         'Basis-Plugins zur Verfügung.';
 $string['releasereminderbody'] = 'E-Mail-Text zur Veröffentlichung';
 $string['releasereminderbody_desc'] = 'E-Mail-Text für OER Erinnerungen zur Veröffentlichung. ' .
-        'Verfügbare Platzhalter: {firstname}, {lastname}, {coursename}, {courselink}, {files}, {releasedate}. ' .
-        '{files} enthält die im Kurs zur Veröffentlichung vorgemerkten Dateien.';
+        'Verfügbare Platzhalter: {firstname}, {lastname}, {releasedate}.';
 $string['releasereminderdaysbefore'] = 'Anzahl der Tage';
 $string['releasereminderdaysbefore_desc'] = 'Die E-Mail wird so viele Tage vor der nächsten OER Veröffentlichung gesendet.';
 $string['releasereminderenabled'] = 'E-Mails zur Veröffentlichung aktivieren';
@@ -474,7 +474,7 @@ $string['releasereminderheading'] = 'E-Mail zur Veröffentlichung';
 $string['releasereminderheading_desc'] = 'Konfiguration der E-Mail, die Benutzer:innen vor der Veröffentlichung von Dateien erhalten.';
 $string['releaseremindersubject'] = 'Betreff der E-Mail';
 $string['releaseremindersubject_desc'] = 'Betreff für OER Erinnerungen zur Veröffentlichung. ' .
-        'Verfügbare Platzhalter: {coursename}, {releasedate}.';
+        'Verfügbare Platzhalter: {releasedate}.';
 $string['releaseremindertask'] = 'Task zum Senden von OER E-Mails zur Veröffentlichung';
 $string['releasetime'] = 'Veröffentlichungsrythmus';
 $string['releasetime_help'] = 'Veröffentlichungsrythmus auswählen';

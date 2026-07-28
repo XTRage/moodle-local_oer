@@ -24,7 +24,7 @@
 
 namespace local_oer;
 
-use local_oer\helper\activecourse;
+use local_oer\helper\multilang;
 use local_oer\time\time_settings;
 use local_oer\userlist\userlist;
 
@@ -121,7 +121,7 @@ class release_reminder {
     }
 
     /**
-     * Send release email to all recipients for each course with files marked for release.
+     * Send release email to all recipients.
      *
      * @param int $releasetime Release timestamp
      * @param string $subject Subject template
@@ -134,22 +134,9 @@ class release_reminder {
     private static function send(int $releasetime, string $subject, string $body): int {
         $sent = 0;
         $recipients = self::get_recipients();
-        foreach (self::get_courses_with_files_for_release() as $course) {
-            $files = self::get_files_for_course($course->id);
-            if (empty($files)) {
-                continue;
-            }
-
-            $coursecontext = \context_course::instance($course->id);
-
-            foreach ($recipients as $user) {
-                if (!is_enrolled($coursecontext, $user, '', true)) {
-                    continue;
-                }
-
-                if (self::send_email($user, $course, $files, $releasetime, $subject, $body)) {
-                    $sent++;
-                }
+        foreach ($recipients as $user) {
+            if (self::send_email($user, $releasetime, $subject, $body)) {
+                $sent++;
             }
         }
 
@@ -192,74 +179,9 @@ class release_reminder {
     }
 
     /**
-     * Return courses with files marked for release.
-     *
-     * @return \stdClass[]
-     * @throws \dml_exception
-     */
-    private static function get_courses_with_files_for_release(): array {
-        global $DB;
-
-        $courses = [];
-        foreach (activecourse::get_list_of_courses() as $activecourse) {
-            if (
-                !$DB->record_exists('local_oer_courseinfo', [
-                    'courseid' => $activecourse->courseid,
-                    'ignored' => 0,
-                    'deleted' => 0,
-                ])
-            ) {
-                continue;
-            }
-
-            $course = $DB->get_record('course', ['id' => $activecourse->courseid], 'id,fullname');
-            if ($course) {
-                $courses[] = $course;
-            }
-        }
-
-        return $courses;
-    }
-
-    /**
-     * Return current course files that are marked for release.
-     *
-     * @param int $courseid Moodle course id
-     * @return \stdClass[]
-     * @throws \coding_exception
-     * @throws \dml_exception
-     * @throws \moodle_exception
-     */
-    private static function get_files_for_course(int $courseid): array {
-        $files = [];
-        foreach (filelist::get_course_files($courseid) as $element) {
-            if (!$element->already_stored()) {
-                continue;
-            }
-
-            $metadata = $element->get_stored_metadata();
-            if ((int) $metadata->releasestate !== 1) {
-                continue;
-            }
-
-            $file = new \stdClass();
-            $file->title = $element->get_title();
-            $files[] = $file;
-        }
-
-        usort($files, static function ($a, $b) {
-            return strcasecmp($a->title, $b->title);
-        });
-
-        return $files;
-    }
-
-    /**
      * Send an email with all placeholders replaced.
      *
      * @param \stdClass $user Moodle user object
-     * @param \stdClass $course Moodle course object
-     * @param array $files Files marked for release in this course, each item is a stdClass
      * @param int $releasetime Release timestamp
      * @param string $subject Subject template
      * @param string $body Body template
@@ -269,68 +191,85 @@ class release_reminder {
      */
     private static function send_email(
         \stdClass $user,
-        \stdClass $course,
-        array $files,
         int $releasetime,
         string $subject,
         string $body
     ): bool {
-        $replacements = self::get_replacements($user, $course, $files, $releasetime);
-        $emailsubject = format_string(strtr($subject, $replacements['subject']));
-        $emailbody = format_text(strtr($body, $replacements['body']), FORMAT_HTML, ['noclean' => true]);
+        $emailsubject = self::get_email_subject($user, $releasetime, $subject);
+        $emailbody = self::get_email_body($user, $releasetime, $body);
         $emailbodyhtml = text_to_html($emailbody, false, false);
 
         return email_to_user($user, \core_user::get_support_user(), $emailsubject, $emailbody, $emailbodyhtml);
     }
 
     /**
-     * Prepare placeholder replacements.
+     * Returns the email subject formatted in the user's language with placeholders replaced.
      *
      * @param \stdClass $user Moodle user object
-     * @param \stdClass $course Moodle course object
-     * @param array $files Files marked for release, each item is a stdClass
+     * @param int $releasetime Release timestamp
+     * @param string $subject Subject template
+     * @return string
+     */
+    private static function get_email_subject(\stdClass $user, int $releasetime, string $subject): string {
+        $mlanglangs = multilang::extract_provided_languages_in_text_via_filter_mlang2($subject);
+        $emailsubject = multilang::with_forced_language(
+            $user->lang,
+            $mlanglangs,
+            static function () use ($subject): string {
+                return format_string($subject);
+            }
+        );
+
+        return strtr($emailsubject, self::get_subject_replacements($releasetime));
+    }
+
+    /**
+     * Returns the email body formatted in the user's language with placeholders replaced.
+     *
+     * @param \stdClass $user Moodle user object
+     * @param int $releasetime Release timestamp
+     * @param string $body Body template
+     * @return string
+     */
+    private static function get_email_body(\stdClass $user, int $releasetime, string $body): string {
+        $mlanglangs = multilang::extract_provided_languages_in_text_via_filter_mlang2($body);
+        $emailbody = multilang::with_forced_language(
+            $user->lang,
+            $mlanglangs,
+            static function () use ($body): string {
+                return format_text($body, FORMAT_HTML, ['noclean' => true]);
+            }
+        );
+
+        return strtr($emailbody, self::get_body_replacements($user, $releasetime));
+    }
+
+    /**
+     * Prepare subject placeholder replacements.
+     *
      * @param int $releasetime Release timestamp
      * @return array
      * @throws \coding_exception
-     * @throws \moodle_exception
      */
-    private static function get_replacements(
-        \stdClass $user,
-        \stdClass $course,
-        array $files,
-        int $releasetime
-    ): array {
-        $courselink = (new \moodle_url('/course/view.php', ['id' => $course->id]))->out(false);
-
+    private static function get_subject_replacements(int $releasetime): array {
         return [
-            'subject' => [
-                '{coursename}' => format_string($course->fullname),
-                '{releasedate}' => userdate($releasetime),
-            ],
-            'body' => [
-                '{firstname}' => $user->firstname,
-                '{lastname}' => $user->lastname,
-                '{coursename}' => format_string($course->fullname),
-                '{courselink}' => format_string($courselink),
-                '{files}' => self::format_file_list($files),
-                '{releasedate}' => userdate($releasetime),
-            ],
+            '{releasedate}' => userdate($releasetime),
         ];
     }
 
     /**
-     * Format files as a readable plain-text list.
+     * Prepare body placeholder replacements.
      *
-     * @param array $files Files marked for release, each item is a stdClass
-     * @return string
+     * @param \stdClass $user Moodle user object
+     * @param int $releasetime Release timestamp
+     * @return array
+     * @throws \coding_exception
      */
-    private static function format_file_list(array $files): string {
-        $lines = [];
-
-        foreach ($files as $file) {
-            $lines[] = '* ' . $file->title;
-        }
-
-        return implode("\n", $lines);
+    private static function get_body_replacements(\stdClass $user, int $releasetime): array {
+        return [
+            '{firstname}' => $user->firstname,
+            '{lastname}' => $user->lastname,
+            '{releasedate}' => userdate($releasetime),
+        ];
     }
 }

@@ -224,6 +224,7 @@ $string['metadatanotwritable2'] = 'The metadata of this file has already been ed
 $string['metadatanotwritable3'] = 'This file has already been released and cannot be edited anymore.';
 $string['minimumchars'] = 'Minimum of {$a} characters';
 $string['moreinformation'] = 'More information';
+$string['multilang_info'] = 'For multilingual support please use <b>mlang</b> tags';
 $string['multiplecourses'] = 'File is used in multiple courses';
 $string['multiplecoursestofile'] = 'File is used in multiple courses. You can also add course metadata ' .
         'that belongs to an other course than where the file is edited.';
@@ -434,8 +435,7 @@ $string['releaseplugin_description'] = 'Choose subplugin to handle the release. 
         'repository, the pull service of the base plugin is available.';
 $string['releasereminderbody'] = 'Release email body';
 $string['releasereminderbody_desc'] = 'Email body for OER release reminders. Available placeholders: ' .
-        '{firstname}, {lastname}, {coursename}, {courselink}, {files}, {releasedate}. ' .
-        '{files} contains the files marked for release in the course.';
+        '{firstname}, {lastname}, {releasedate}.';
 $string['releasereminderdaysbefore'] = 'Number of days';
 $string['releasereminderdaysbefore_desc'] = 'The email is sent this many days before the next OER release.';
 $string['releasereminderenabled'] = 'Enable release emails';
@@ -444,7 +444,7 @@ $string['releasereminderheading'] = 'Release email';
 $string['releasereminderheading_desc'] = 'Configure the email sent to users before files are released.';
 $string['releaseremindersubject'] = 'Release email subject';
 $string['releaseremindersubject_desc'] = 'Email subject for OER release reminders. Available placeholders: ' .
-        '{coursename}, {releasedate}.';
+        '{releasedate}.';
 $string['releaseremindertask'] = 'Task to send OER release emails';
 $string['releasetime'] = 'Releaserythm';
 $string['releasetime_help'] = 'Choose release/snapshot rythm for file metadata';

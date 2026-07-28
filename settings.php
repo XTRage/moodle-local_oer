@@ -261,14 +261,18 @@ if ($hassiteconfig) {
     $settings->add(new admin_setting_configtext(
         'local_oer/releasereminder_subject',
         new lang_string('releaseremindersubject', 'local_oer'),
-        new lang_string('releaseremindersubject_desc', 'local_oer'),
+        \local_oer\helper\multilang::apply_additional_info_mlang2(
+            get_string('releaseremindersubject_desc', 'local_oer')
+        ),
         '',
         PARAM_RAW_TRIMMED
     ));
     $settings->add(new admin_setting_configtextarea(
         'local_oer/releasereminder_body',
         new lang_string('releasereminderbody', 'local_oer'),
-        new lang_string('releasereminderbody_desc', 'local_oer'),
+        \local_oer\helper\multilang::apply_additional_info_mlang2(
+            get_string('releasereminderbody_desc', 'local_oer')
+        ),
         '',
         PARAM_RAW_TRIMMED
     ));
